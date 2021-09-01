@@ -12,7 +12,7 @@ app.use(express.json());
 
 app.use(express.static("public"));
 
-const databaseUrl = "workoutDB";
+const databaseUrl = "workout";
 const collections = ["exercises"];
 
 const db = mongojs(databaseUrl, collections);
@@ -21,7 +21,7 @@ db.on("error", error => {
   console.log("Database Error:", error);
 });
 
-app.get("/", (req, res) => {
+app.get("/", (req, res) => {  
   res.sendFile(path.join(__dirname + "./public/index.html"));
 });
 
@@ -37,8 +37,8 @@ app.post("/submit", (req, res) => {
   });
 });
 
-app.get("/all", (req, res) => {
-  db.exercises.find({}, (error, data) => {
+app.get("/api/workouts", (req, res) => {
+  db.workouts.find({}, (error, data) => {
     if (error) {
       res.send(error);
     } else {
@@ -46,6 +46,22 @@ app.get("/all", (req, res) => {
     }
   });
 });
+
+app.get("/exercise/:id", (req, res) => {
+  db.exercises.findOne(
+    {
+      _id: mongojs.ObjectId(req.params.id)
+    },
+    (error, data) => {
+      if (error) {
+        res.send(error);
+      } else {
+        res.send(data);
+      }
+    }
+  );
+});
+
 
 app.get("/find/:id", (req, res) => {
   db.exercises.findOne(
