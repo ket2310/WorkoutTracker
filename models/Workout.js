@@ -3,37 +3,26 @@ const Schema = mongoose.Schema;
 
 const WorkoutSchema = new Schema({
 
-    type: {
-        type: String,
-        unique: true,
-        required: true
-    },
-
-    name: {
-        type: String,
-        trim: true,
-        required: true
-    },
-
-    duration: {
-        type: Number,
-        required: true
-    },
-
-    weight: {
-        type: Number,
-        required: true
-    },
-    
-    reps: {
-        type: Number,
-        required: true
-    },
-    sets: {
-        type: Number,
-        required: true
+   day: {
+       type: Date,
+       required: true
+   },
+   totalDuration: {
+       type: Number,
+       required: true
+   },
+   exercises:  [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Exercise"
     }
+  ]
 });
+
+WorkoutSchema.methods.addTime = function() {
+
+    this.totalDuration += this.exercises.duration;
+}
 
 const Workout = mongoose.model("Workout", WorkoutSchema);
 
