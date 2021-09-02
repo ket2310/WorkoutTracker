@@ -4,6 +4,15 @@ const logger = require("morgan");
 const path = require("path");
 
 const app = express();
+const pipeline = [
+  {
+    '$addFields': {
+      'totalDuration': {
+        '$sum': '$exercises.duration'
+      }
+    }
+  }
+]
 
 app.use(logger("dev"));
 
@@ -21,55 +30,45 @@ db.on("error", error => {
   console.log("Database Error:", error);
 });
 
-app.get("/", (req, res) => {  
+app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname + "./public/index.html"));
 });
 
 
-app.get("/stats", (req, res) => {  
+app.get("/stats", (req, res) => {
   res.sendFile(path.join(__dirname + "/public/stats.html"));
 });
 
-app.post("/submit", (req, res) => {
-  console.log(req.body);
-
-  db.exercises.insert(req.body, (error, data) => {
-    if (error) {
-      res.send(error);
-    } else {
-      res.send(data);
-    }
-  });
+app.post("/api/workouts", (req, res) => {
+  //console.log("NEW WORKOUT: " + req.body)
+  req.body.day = new Date(new Date().setDate(new Date().getDate())),
+    db.workouts.insert(req.body, (error, data) => {
+      if (error) {
+        res.send(error);
+      } else {
+        console.log(data)
+        res.send(data);
+      }
+    });
 });
 
 app.get("/api/workouts", (req, res) => {
-  db.workouts.find({}, (error, data) => {
+  db.workouts.aggregate(pipeline, (error, data) => {
     if (error) {
       res.send(error);
     } else {
+      console.log(data)
       res.json(data);
     }
   });
 });
 
-app.get("/exercise/:id", (req, res) => {
-  db.exercises.findOne(
-    {
-      _id: mongojs.ObjectId(req.params.id)
-    },
-    (error, data) => {
-      if (error) {
-        res.send(error);
-      } else {
-        res.send(data);
-      }
-    }
-  );
+app.get("/exercise", (req, res) => {
+  res.sendFile(path.join(__dirname + "/public/exercise.html"));
 });
-
 
 app.get("/find/:id", (req, res) => {
-  db.exercises.findOne(
+  db.workouts.findOne(
     {
       _id: mongojs.ObjectId(req.params.id)
     },
@@ -77,22 +76,27 @@ app.get("/find/:id", (req, res) => {
       if (error) {
         res.send(error);
       } else {
-        res.send(data);
+        res.json(data);
       }
     }
   );
 });
 
-app.post("/update/:id", (req, res) => {
-  db.exercises.update(
+app.put("/api/workouts/:id", (req, res) => {
+  db.workouts.update(
     {
       _id: mongojs.ObjectId(req.params.id)
     },
     {
       $set: {
-        title: req.body.title,
-        note: req.body.note,
-        modified: Date.now()
+        exercises: {
+          type: req.body.type,
+          name: req.body.name,
+          duration: req.body.duration,
+          weight: req.body.weight,
+          reps: req.body.reps,
+          sets: req.body.sets
+        }
       }
     },
     (error, data) => {
