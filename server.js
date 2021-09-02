@@ -82,6 +82,19 @@ app.get("/find/:id", (req, res) => {
   );
 });
 
+app.get("/api/workouts/range", (req, res) => {
+  db.workouts.aggregate(pipeline,
+    {
+      $range: [db.workouts.length, db.workouts.length - 7, -1]
+    },(error, data) => {
+      if (error) {
+        res.send(error);
+      } else {
+        res.json(data);
+      }
+    }
+  )
+})
 app.put("/api/workouts/:id", (req, res) => {
   db.workouts.update(
     {
