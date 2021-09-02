@@ -88,11 +88,12 @@ app.put("/api/workouts/:id", (req, res) => {
       _id: mongojs.ObjectId(req.params.id)
     },
     {
-      $set: {
+      $push: {
         exercises: {
           type: req.body.type,
           name: req.body.name,
           duration: req.body.duration,
+          distance: req.body.distance,
           weight: req.body.weight,
           reps: req.body.reps,
           sets: req.body.sets

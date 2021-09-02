@@ -22,6 +22,11 @@ const ExerciseSchema = new Schema ({
         required: true
     },
 
+    
+    distance: {
+        type: Number,
+        required: true
+    },
     weight: {
         type: Number,
         required: true
