@@ -1,10 +1,19 @@
 const express = require("express");
-const mongojs = require("mongojs");
 const logger = require("morgan");
 const path = require("path");
 const PORT = process.env.PORT || 3000;
 
 const app = express();
+
+const mongoose = require('mongoose');
+const db = require('./models');
+
+mongoose.connect( process.env.MONGODB_URI || 'mongodb://localhost/workout', {
+  useNewUrlParser: true,
+  useFindAndModify: false,
+  useUnifiedTopology: true,
+});
+
 const pipeline = [
   {
     '$addFields': {
@@ -22,15 +31,6 @@ app.use(express.json());
 
 app.use(express.static("public"));
 
-const databaseUrl = "workout";
-const collections = ["exercises"];
-
-const db = mongojs(databaseUrl, collections);
-
-db.on("error", error => {
-  console.log("Database Error:", error);
-});
-
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname + "./public/index.html"));
 });
@@ -43,7 +43,7 @@ app.get("/stats", (req, res) => {
 app.post("/api/workouts", (req, res) => {
   //console.log("NEW WORKOUT: " + req.body)
   req.body.day = new Date(new Date().setDate(new Date().getDate())),
-    db.workouts.insert(req.body, (error, data) => {
+    db.Workout.insert(req.body, (error, data) => {
       if (error) {
         res.send(error);
       } else {
@@ -54,7 +54,7 @@ app.post("/api/workouts", (req, res) => {
 });
 
 app.get("/api/workouts", (req, res) => {
-  db.workouts.aggregate(pipeline, (error, data) => {
+  db.Workout.aggregate(pipeline, (error, data) => {
     if (error) {
       res.send(error);
     } else {
@@ -69,10 +69,7 @@ app.get("/exercise", (req, res) => {
 });
 
 app.get("/find/:id", (req, res) => {
-  db.workouts.findOne(
-    {
-      _id: mongojs.ObjectId(req.params.id)
-    },
+  db.Workout.find({"day": id},
     (error, data) => {
       if (error) {
         res.send(error);
@@ -84,10 +81,14 @@ app.get("/find/:id", (req, res) => {
 });
 
 app.get("/api/workouts/range", (req, res) => {
-  db.workouts.aggregate(pipeline,
+  db.Workout.aggregate([
     {
-      $range: [db.workouts.length, db.workouts.length - 7, -1]
-    },(error, data) => {
+      '$addFields': {
+        'totalDuration': {
+          '$sum': '$exercises.duration'
+        }
+      }
+    }, {$limit: 7}],(error, data) => {
       if (error) {
         res.send(error);
       } else {
@@ -97,9 +98,9 @@ app.get("/api/workouts/range", (req, res) => {
   )
 })
 app.put("/api/workouts/:id", (req, res) => {
-  db.workouts.update(
+  db.Workout.update(
     {
-      _id: mongojs.ObjectId(req.params.id)
+      _id: req.params.id
     },
     {
       $push: {
