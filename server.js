@@ -98,7 +98,7 @@ app.get("/api/workouts/range", (req, res) => {
   )
 })
 app.put("/api/workouts/:id", (req, res) => {
-  db.Workout.update(
+  db.Workout.updateOne(
     {
       _id: req.params.id
     },
